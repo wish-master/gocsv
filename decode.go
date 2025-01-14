@@ -7,6 +7,7 @@ import (
 	"io"
 	"mime/multipart"
 	"reflect"
+	"strings"
 )
 
 var (
@@ -170,6 +171,15 @@ func readToWithErrorHandler(decoder Decoder, errHandler ErrorHandler, out interf
 
 	headers := normalizeHeaders(csvRows[0])
 	body := csvRows[1:]
+	if len(headers) != len(outInnerStructInfo.Fields) {
+		return fmt.Errorf("expected %d fields, got %d", len(outInnerStructInfo.Fields), len(headers))
+	}
+
+	for i, required := range outInnerStructInfo.Fields {
+		if !required.matchesKey(headers[i]) {
+			return fmt.Errorf("header %d expected to be %v, but it is %s", i, strings.Join(required.keys, " or "), headers[i])
+		}
+	}
 
 	csvHeadersLabels := make(map[int]*fieldInfo, len(outInnerStructInfo.Fields)) // Used to store the correspondance header <-> position in CSV
 
